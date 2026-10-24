@@ -807,6 +807,27 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
         endif()
     ")
 
+    # The Vulkan loader needs a driver (ICD) to do anything. Bundle MoltenVK with a manifest in
+    # Contents/Resources/vulkan/icd.d, which the loader searches first, so Vulkan works without
+    # MoltenVK installed on the system.
+    if(LUS_ENABLE_VULKAN)
+        find_library(PAPERBOAT_MOLTENVK_DYLIB NAMES MoltenVK PATHS ${CMAKE_PREFIX_PATH} PATH_SUFFIXES lib NO_DEFAULT_PATH)
+        if(NOT PAPERBOAT_MOLTENVK_DYLIB)
+            find_library(PAPERBOAT_MOLTENVK_DYLIB NAMES MoltenVK HINTS /opt/homebrew/lib /opt/local/lib /usr/local/lib)
+        endif()
+        if(PAPERBOAT_MOLTENVK_DYLIB)
+            message(STATUS "Bundling MoltenVK from: ${PAPERBOAT_MOLTENVK_DYLIB}")
+            install(CODE "
+                set(CONTENTS \"\${CMAKE_INSTALL_PREFIX}/..\")
+                file(COPY_FILE \"${PAPERBOAT_MOLTENVK_DYLIB}\" \"\${CONTENTS}/Frameworks/libMoltenVK.dylib\")
+                file(WRITE \"\${CONTENTS}/Resources/vulkan/icd.d/MoltenVK_icd.json\"
+                    \"{\\\"file_format_version\\\": \\\"1.0.0\\\", \\\"ICD\\\": {\\\"library_path\\\": \\\"../../../Frameworks/libMoltenVK.dylib\\\", \\\"api_version\\\": \\\"1.4.0\\\", \\\"is_portability_driver\\\": true}}\\n\")
+            ")
+        else()
+            message(WARNING "Vulkan is enabled but MoltenVK was not found; the app's Vulkan renderer will need it installed.")
+        endif()
+    endif()
+
     set(CPACK_GENERATOR "Bundle")
     set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_SOURCE_DIR}/cmake/configure-packaging.cmake)
     include(cmake/packaging.cmake)
