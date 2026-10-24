@@ -402,10 +402,16 @@ void PaperboatMenu::AddMenuSettings() {
 #ifdef __APPLE__
     // macOS fork HDR (Metal renderer). 16-bit keeps the same colors with more precision (less banding);
     // Auto HDR then lets the brightest parts of the game image go past SDR white on displays with HDR headroom.
-    // Only the Metal renderer implements these, so on another renderer they stay visible but greyed out.
+    // Only the Metal renderer implements these, so once another renderer is chosen they are switched off
+    // and greyed out, rather than left looking enabled.
     static auto HdrDisableUnlessMetal = [](WidgetInfo& info) {
         if (mPaperboatMenu->disabledMap.at(DISABLE_FOR_NOT_METAL).active) {
             info.activeDisables.push_back(DISABLE_FOR_NOT_METAL);
+            if (CVarGetInteger("gHdr.HighPrecision", 0) || CVarGetInteger("gHdr.AutoHdr", 0)) {
+                CVarSetInteger("gHdr.HighPrecision", 0);
+                CVarSetInteger("gHdr.AutoHdr", 0);
+                Ship::Context::GetRawInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
+            }
         }
     };
     AddWidget(path, "16-bit Color + HDR Output", WIDGET_CVAR_CHECKBOX)

@@ -127,8 +127,14 @@ void PaperboatMenu::InitElement() {
             "Not Available on DirectX" } },
         { DISABLE_FOR_NOT_METAL,
           { [](disabledInfo& info) -> bool {
-               return Ship::Context::GetRawInstance()->GetWindow()->GetWindowBackend()
-                   != Fast::WindowBackend::FAST3D_SDL_METAL;
+               // Follow the renderer picked in the menu (saved right away, applied on restart), not the
+               // running one, so the HDR options grey out as soon as another renderer is chosen.
+               auto window = Ship::Context::GetRawInstance()->GetWindow();
+               int32_t backend = Ship::Context::GetRawInstance()->GetConfig()->GetInt("Window.Backend.Id", -1);
+               if (!window->IsAvailableWindowBackend(backend)) {
+                   backend = window->GetWindowBackend();
+               }
+               return backend != Fast::WindowBackend::FAST3D_SDL_METAL;
            },
             "Available Only on Metal" } },
         { DISABLE_FOR_MATCH_REFRESH_RATE_ON,
