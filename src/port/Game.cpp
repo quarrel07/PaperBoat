@@ -15,6 +15,9 @@
 #include <SDL2/SDL.h>
 #include "port/web/WebUtils.h"
 #endif
+#if defined(__APPLE__) && !defined(PLATFORM_IOS)
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 #ifdef __ANDROID__
 // Redefines main() to SDL_main(), which SDLActivity calls into. The game data
 // is unpacked before this process starts, by GameAssets.kt.
@@ -121,6 +124,11 @@ int SDL_main(int argc, char** argv) {
 extern "C"
 #endif
     int main(int argc, char* argv[]) {
+#endif
+#if defined(__APPLE__) && !defined(PLATFORM_IOS)
+    // Holding a letter key (WASD) would otherwise open the macOS accent picker instead of repeating.
+    CFPreferencesSetAppValue(CFSTR("ApplePressAndHoldEnabled"), kCFBooleanFalse, kCFPreferencesCurrentApplication);
+    CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
 #endif
 #ifdef __EMSCRIPTEN__
     // Everything the engine writes lives under /storage, an IndexedDB mount.
