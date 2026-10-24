@@ -732,6 +732,29 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    # Liquid Glass icon: an Icon Composer file compiles (actool, Xcode 26+) to Assets.car for
+    # macOS 26+, and its flat render becomes the .icns for older macOS. Without one, use logo.png.
+    # The file must be named Paperboat.icon so its catalog name matches CFBundleIconName.
+    set(PAPERBOAT_MACOS_ICON "${CMAKE_SOURCE_DIR}/macosx/Paperboat.icon")
+    execute_process(COMMAND xcrun --find actool OUTPUT_VARIABLE PAPERBOAT_ACTOOL OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin" AND EXISTS "${PAPERBOAT_MACOS_ICON}" AND PAPERBOAT_ACTOOL)
+    set(PAPERBOAT_GLASS_DIR "${CMAKE_BINARY_DIR}/macosx/glass")
+    file(GLOB_RECURSE PAPERBOAT_ICON_FILES CONFIGURE_DEPENDS "${PAPERBOAT_MACOS_ICON}/*")
+    add_custom_command(
+        OUTPUT "${PAPERBOAT_GLASS_DIR}/Assets.car" "${CMAKE_BINARY_DIR}/macosx/paperboat.icns"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${PAPERBOAT_GLASS_DIR}"
+        COMMAND xcrun actool "${PAPERBOAT_MACOS_ICON}" --compile "${PAPERBOAT_GLASS_DIR}" --app-icon Paperboat
+                --output-partial-info-plist "${PAPERBOAT_GLASS_DIR}/partial.plist" --platform macosx
+                --target-device mac --minimum-deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET} --errors --warnings
+        COMMAND iconutil -c icns "${PAPERBOAT_GLASS_DIR}/Assets.car" Paperboat -o "${CMAKE_BINARY_DIR}/macosx/paperboat.icns"
+        DEPENDS ${PAPERBOAT_ICON_FILES}
+        COMMENT "Compiling the Liquid Glass app icon ..."
+    )
+    add_custom_target(CreateOSXIcons DEPENDS "${PAPERBOAT_GLASS_DIR}/Assets.car" "${CMAKE_BINARY_DIR}/macosx/paperboat.icns")
+    install(FILES "${PAPERBOAT_GLASS_DIR}/Assets.car" DESTINATION ../Resources COMPONENT ${PROJECT_NAME})
+elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     add_custom_target(CreateOSXIcons
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/macosx/paperboat.iconset
         COMMAND sips -z 16 16     logo.png --out ${CMAKE_BINARY_DIR}/macosx/paperboat.iconset/icon_16x16.png
@@ -748,6 +771,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Creating OSX icons ..."
     )
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     add_dependencies(${PROJECT_NAME} CreateOSXIcons)
     configure_file("${CMAKE_SOURCE_DIR}/Info.plist" "${CMAKE_BINARY_DIR}/Info.plist" @ONLY)
 

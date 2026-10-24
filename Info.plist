@@ -12,6 +12,8 @@
     <string>@PROJECT_VERSION@</string>
     <key>CFBundleIconFile</key>
     <string>Paperboat.icns</string>
+    <key>CFBundleIconName</key>
+    <string>Paperboat</string>
     <key>CFBundleIdentifier</key>
     <string>com.paperboat</string>
     <key>CFBundleDocumentTypes</key>
