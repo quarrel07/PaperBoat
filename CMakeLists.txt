@@ -312,7 +312,28 @@ if(IOS)
     set(IOS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ios)
     set(STORYBOARD_FILE ${IOS_DIR}/Launch.storyboard)
     set(IMAGE_FILES ${IOS_DIR}/PoweredBy.png)
-    set(ICON_FILES ${IOS_DIR}/Icon.png)
+    include(cmake/glass-icon.cmake)
+    paperboat_compile_glass_icon("${CMAKE_BINARY_DIR}/ios-icon" PAPERBOAT_IOS_GLASS
+        --platform iphoneos --target-device iphone --target-device ipad --minimum-deployment-target ${DEPLOYMENT_TARGET})
+    if(PAPERBOAT_IOS_GLASS)
+        # Assets.car for iOS 26+, plus the flat PNGs actool renders for older iOS.
+        file(GLOB ICON_FILES "${CMAKE_BINARY_DIR}/ios-icon/*.png")
+        list(APPEND ICON_FILES "${CMAKE_BINARY_DIR}/ios-icon/Assets.car")
+        set(PAPERBOAT_IOS_ICON_KEYS "<key>CFBundleIcons</key>
+	<dict><key>CFBundlePrimaryIcon</key><dict>
+		<key>CFBundleIconFiles</key><array><string>Paperboat60x60</string></array>
+		<key>CFBundleIconName</key><string>Paperboat</string>
+	</dict></dict>
+	<key>CFBundleIcons~ipad</key>
+	<dict><key>CFBundlePrimaryIcon</key><dict>
+		<key>CFBundleIconFiles</key><array><string>Paperboat60x60</string><string>Paperboat76x76</string></array>
+		<key>CFBundleIconName</key><string>Paperboat</string>
+	</dict></dict>")
+    else()
+        set(ICON_FILES ${IOS_DIR}/Icon.png)
+        set(PAPERBOAT_IOS_ICON_KEYS "<key>CFBundleIconFile</key>
+	<string>Icon</string>")
+    endif()
 
     add_executable(${PROJECT_NAME}
         ${GAME_SOURCES}
@@ -732,28 +753,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    # Liquid Glass icon: an Icon Composer file compiles (actool, Xcode 26+) to Assets.car for
-    # macOS 26+, and its flat render becomes the .icns for older macOS. Without one, use logo.png.
-    # The file must be named Paperboat.icon so its catalog name matches CFBundleIconName.
-    set(PAPERBOAT_MACOS_ICON "${CMAKE_SOURCE_DIR}/macosx/Paperboat.icon")
-    execute_process(COMMAND xcrun --find actool OUTPUT_VARIABLE PAPERBOAT_ACTOOL OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    include(cmake/glass-icon.cmake)
+    paperboat_compile_glass_icon("${CMAKE_BINARY_DIR}/macosx/glass" PAPERBOAT_MACOS_GLASS
+        --platform macosx --target-device mac --minimum-deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET})
 endif()
 
-if(CMAKE_SYSTEM_NAME MATCHES "Darwin" AND EXISTS "${PAPERBOAT_MACOS_ICON}" AND PAPERBOAT_ACTOOL)
-    set(PAPERBOAT_GLASS_DIR "${CMAKE_BINARY_DIR}/macosx/glass")
-    file(GLOB_RECURSE PAPERBOAT_ICON_FILES CONFIGURE_DEPENDS "${PAPERBOAT_MACOS_ICON}/*")
-    add_custom_command(
-        OUTPUT "${PAPERBOAT_GLASS_DIR}/Assets.car" "${CMAKE_BINARY_DIR}/macosx/paperboat.icns"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${PAPERBOAT_GLASS_DIR}"
-        COMMAND xcrun actool "${PAPERBOAT_MACOS_ICON}" --compile "${PAPERBOAT_GLASS_DIR}" --app-icon Paperboat
-                --output-partial-info-plist "${PAPERBOAT_GLASS_DIR}/partial.plist" --platform macosx
-                --target-device mac --minimum-deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET} --errors --warnings
-        COMMAND iconutil -c icns "${PAPERBOAT_GLASS_DIR}/Assets.car" Paperboat -o "${CMAKE_BINARY_DIR}/macosx/paperboat.icns"
-        DEPENDS ${PAPERBOAT_ICON_FILES}
-        COMMENT "Compiling the Liquid Glass app icon ..."
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin" AND PAPERBOAT_MACOS_GLASS)
+    # Older macOS shows the .icns: extract a full-size one from the compiled catalog.
+    add_custom_target(CreateOSXIcons
+        COMMAND iconutil -c icns "${CMAKE_BINARY_DIR}/macosx/glass/Assets.car" Paperboat
+                -o "${CMAKE_BINARY_DIR}/macosx/paperboat.icns"
+        COMMENT "Creating OSX icons from the Liquid Glass icon ..."
     )
-    add_custom_target(CreateOSXIcons DEPENDS "${PAPERBOAT_GLASS_DIR}/Assets.car" "${CMAKE_BINARY_DIR}/macosx/paperboat.icns")
-    install(FILES "${PAPERBOAT_GLASS_DIR}/Assets.car" DESTINATION ../Resources COMPONENT ${PROJECT_NAME})
+    install(FILES "${CMAKE_BINARY_DIR}/macosx/glass/Assets.car" DESTINATION ../Resources COMPONENT ${PROJECT_NAME})
 elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     add_custom_target(CreateOSXIcons
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/macosx/paperboat.iconset

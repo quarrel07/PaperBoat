@@ -10,8 +10,7 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleGetInfoString</key>
 	<string></string>
-	<key>CFBundleIconFile</key>
-	<string>Icon</string>
+	@PAPERBOAT_IOS_ICON_KEYS@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
