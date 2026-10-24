@@ -312,9 +312,8 @@ if(IOS)
     set(IOS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ios)
     set(STORYBOARD_FILE ${IOS_DIR}/Launch.storyboard)
     set(IMAGE_FILES ${IOS_DIR}/PoweredBy.png)
-    # Prebuilt from macosx/Paperboat.icon by macosx/update-app-icons.sh: the Liquid Glass catalog
-    # for iOS 26+ and the flat PNGs older iOS reads (see CFBundleIcons in plist.in).
-    set(ICON_FILES ${IOS_DIR}/Assets.car ${IOS_DIR}/Paperboat60x60@2x.png ${IOS_DIR}/Paperboat76x76@2x~ipad.png)
+    # Prebuilt from macosx/Paperboat.icon by macosx/update-app-icons.sh (see CFBundleIcons in plist.in).
+    set(ICON_FILES ${IOS_DIR}/Assets.car)
 
     add_executable(${PROJECT_NAME}
         ${GAME_SOURCES}

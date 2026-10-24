@@ -5,7 +5,6 @@
 #   macosx/Assets.car       Liquid Glass icon for macOS 26+
 #   macosx/Paperboat.icns   full-size flat icon for older macOS, extracted from that catalog
 #   ios/Assets.car          Liquid Glass icon for iOS 26+, with flat renditions for older iOS
-#   ios/Paperboat*.png      flat icons older iOS reads through CFBundleIconFiles
 set -euo pipefail
 cd "$(dirname "$0")/.."
 XCODE_MAJOR=$(xcodebuild -version | awk 'NR==1{split($2, v, "."); print v[1]}')
@@ -29,7 +28,7 @@ cp "$TMP/mac/Assets.car" macosx/Assets.car
 iconutil -c icns macosx/Assets.car Paperboat -o macosx/Paperboat.icns
 
 compile "$TMP/ios" --platform iphoneos --target-device iphone --target-device ipad --minimum-deployment-target 16.3
+# actool also writes loose PNGs for iOS 10 and older; Paperboat needs iOS 16.3, so they are not kept.
 cp "$TMP/ios/Assets.car" ios/Assets.car
-cp "$TMP/ios"/Paperboat*.png ios/
 
-echo "Updated macosx/Assets.car, macosx/Paperboat.icns, ios/Assets.car and ios/Paperboat*.png"
+echo "Updated macosx/Assets.car, macosx/Paperboat.icns and ios/Assets.car"
