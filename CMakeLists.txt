@@ -1,6 +1,12 @@
 # libultraship's floor, and what FetchContent's OVERRIDE_FIND_PACKAGE needs.
 cmake_minimum_required(VERSION 3.24)
 
+# Native macOS builds: match Info.plist's LSMinimumSystemVersion. Without this the
+# compiler targets the build machine's macOS. Toolchain builds (iOS etc.) set their own.
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS version")
+endif()
+
 project(Paperboat
     VERSION 1.0.3
     LANGUAGES C CXX
@@ -758,6 +764,21 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     install(CODE "
         include(BundleUtilities)
         fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/../MacOS/Paperboat\" \"\" \"\")
+    ")
+
+    # sdl2-compat loads SDL3 at runtime, which fixup_bundle can't see. Bundle it from the
+    # configured dependency set (CMAKE_PREFIX_PATH) first, then Homebrew.
+    execute_process(COMMAND brew --prefix sdl3 OUTPUT_VARIABLE PAPERBOAT_BREW_SDL3 OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    find_library(PAPERBOAT_SDL3_DYLIB NAMES SDL3.0 SDL3 PATHS ${CMAKE_PREFIX_PATH} PATH_SUFFIXES lib NO_DEFAULT_PATH)
+    if(NOT PAPERBOAT_SDL3_DYLIB AND PAPERBOAT_BREW_SDL3 AND EXISTS "${PAPERBOAT_BREW_SDL3}/lib/libSDL3.0.dylib")
+        set(PAPERBOAT_SDL3_DYLIB "${PAPERBOAT_BREW_SDL3}/lib/libSDL3.0.dylib")
+    endif()
+    install(CODE "
+        set(FRAMEWORKS \"\${CMAKE_INSTALL_PREFIX}/../Frameworks\")
+        file(GLOB BUNDLED_SDL2 \"\${FRAMEWORKS}/libSDL2*.dylib\")
+        if(BUNDLED_SDL2 AND EXISTS \"${PAPERBOAT_SDL3_DYLIB}\")
+            file(COPY_FILE \"${PAPERBOAT_SDL3_DYLIB}\" \"\${FRAMEWORKS}/libSDL3.dylib\")
+        endif()
     ")
 
     set(CPACK_GENERATOR "Bundle")
