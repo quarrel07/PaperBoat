@@ -402,16 +402,26 @@ void PaperboatMenu::AddMenuSettings() {
 #ifdef __APPLE__
     // macOS fork HDR (Metal renderer). 16-bit keeps the same colors with more precision (less banding);
     // Auto HDR then lets the brightest parts of the game image go past SDR white on displays with HDR headroom.
+    // Only the Metal renderer implements these, so on another renderer they stay visible but greyed out.
+    static auto HdrDisableUnlessMetal = [](WidgetInfo& info) {
+        if (mPaperboatMenu->disabledMap.at(DISABLE_FOR_NOT_METAL).active) {
+            info.activeDisables.push_back(DISABLE_FOR_NOT_METAL);
+        }
+    };
     AddWidget(path, "16-bit Color + HDR Output", WIDGET_CVAR_CHECKBOX)
         .CVar("gHdr.HighPrecision")
         .RaceDisable(false)
+        .PreFunc(HdrDisableUnlessMetal)
         .Options(CheckboxOptions().Tooltip(
             "Draws the game and the window in 16-bit color instead of 8-bit, which smooths banding in dark scenes, "
-            "fog and sky, and enables HDR output. Colors are otherwise unchanged. Metal renderer only."));
+            "fog and sky, and enables HDR output. Colors are otherwise unchanged."));
     AddWidget(path, "Auto HDR", WIDGET_CVAR_CHECKBOX)
         .CVar("gHdr.AutoHdr")
         .RaceDisable(false)
-        .PreFunc([](WidgetInfo& info) { info.isHidden = !CVarGetInteger("gHdr.HighPrecision", 0); })
+        .PreFunc([](WidgetInfo& info) {
+            info.isHidden = !CVarGetInteger("gHdr.HighPrecision", 0);
+            HdrDisableUnlessMetal(info);
+        })
         .Options(CheckboxOptions().Tooltip(
             "Converts the game's standard picture to HDR: darker colors stay as they are and the brightest ones "
             "(sun, fire, sky, magic) glow brighter than normal white. Needs a display with HDR headroom."));
@@ -420,6 +430,7 @@ void PaperboatMenu::AddMenuSettings() {
         .RaceDisable(false)
         .PreFunc([](WidgetInfo& info) {
             info.isHidden = !CVarGetInteger("gHdr.HighPrecision", 0) || !CVarGetInteger("gHdr.AutoHdr", 0);
+            HdrDisableUnlessMetal(info);
         })
         .Options(FloatSliderOptions()
                      .Tooltip("How bright pure white may get, as a multiple of normal white. Capped automatically at "
@@ -434,6 +445,7 @@ void PaperboatMenu::AddMenuSettings() {
         .RaceDisable(false)
         .PreFunc([](WidgetInfo& info) {
             info.isHidden = !CVarGetInteger("gHdr.HighPrecision", 0) || !CVarGetInteger("gHdr.AutoHdr", 0);
+            HdrDisableUnlessMetal(info);
         })
         .Options(FloatSliderOptions()
                      .Tooltip("Brightness level where the HDR boost begins. Higher keeps more of the picture "
@@ -448,6 +460,7 @@ void PaperboatMenu::AddMenuSettings() {
         .RaceDisable(false)
         .PreFunc([](WidgetInfo& info) {
             info.isHidden = !CVarGetInteger("gHdr.HighPrecision", 0) || !CVarGetInteger("gHdr.AutoHdr", 0);
+            HdrDisableUnlessMetal(info);
         })
         .Options(FloatSliderOptions()
                      .Tooltip("How sharply the boost ramps up. Higher keeps the boost to only the very brightest "
@@ -459,7 +472,8 @@ void PaperboatMenu::AddMenuSettings() {
                      .Format("%.1f"));
     AddWidget(path, "Display HDR headroom", WIDGET_TEXT)
         .PreFunc([](WidgetInfo& info) {
-            info.isHidden = !CVarGetInteger("gHdr.HighPrecision", 0);
+            info.isHidden = !CVarGetInteger("gHdr.HighPrecision", 0) ||
+                            mPaperboatMenu->disabledMap.at(DISABLE_FOR_NOT_METAL).active;
             char text[64];
             snprintf(text, sizeof(text), "Display HDR headroom right now: %.1fx",
                      CVarGetFloat("gHdr.Internal.Headroom", 1.0f));
