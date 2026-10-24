@@ -10,7 +10,31 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleGetInfoString</key>
 	<string></string>
-	@PAPERBOAT_IOS_ICON_KEYS@
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>Paperboat60x60</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>Paperboat</string>
+		</dict>
+	</dict>
+	<key>CFBundleIcons~ipad</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>Paperboat60x60</string>
+				<string>Paperboat76x76</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>Paperboat</string>
+		</dict>
+	</dict>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
