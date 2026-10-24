@@ -413,9 +413,8 @@ void PaperboatMenu::AddMenuSettings() {
         .RaceDisable(false)
         .PreFunc([](WidgetInfo& info) { info.isHidden = !CVarGetInteger("gHdr.HighPrecision", 0); })
         .Options(CheckboxOptions().Tooltip(
-            "Converts the game's standard picture to HDR in the style of Dolphin's AutoHDR: darker colors stay as "
-            "they are and the brightest ones (sun, fire, sky, magic) glow brighter than normal white. Needs a "
-            "display with HDR headroom, such as a MacBook Pro's built-in screen."));
+            "Converts the game's standard picture to HDR: darker colors stay as they are and the brightest ones "
+            "(sun, fire, sky, magic) glow brighter than normal white. Needs a display with HDR headroom."));
     AddWidget(path, "Auto HDR Peak Brightness", WIDGET_CVAR_SLIDER_FLOAT)
         .CVar("gHdr.AutoHdrPeak")
         .RaceDisable(false)
