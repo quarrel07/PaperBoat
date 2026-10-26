@@ -159,7 +159,9 @@ Gfx D_8014EA48[] = {
     gsDPLoadTextureTile(&D_80156910, G_IM_FMT_RGBA, G_IM_SIZ_16b, 160, 0, 0, 110, 159, 119, 0, G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, 8, 4, G_TX_NOLOD, G_TX_NOLOD),
     gsSP2Triangles(20, 22, 21, 0, 23, 21, 22, 0),
     gsDPPipeSync(),
-    gsDPSetDepthSource(G_ZS_PIXEL)
+    gsDPSetDepthSource(G_ZS_PIXEL),
+    // On N64 this list ran on into D_8014ED90 (a lone end marker); the port can't rely on data order.
+    gsSPEndDisplayList()
 };
 
 // Runtime, widescreen-aware equivalent of D_8014E9A8: the full-screen overlay
